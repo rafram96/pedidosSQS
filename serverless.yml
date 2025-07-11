@@ -4,14 +4,10 @@ service: pedidos-service
 provider:
   name: aws
   runtime: python3.13
-  region: us-east-1
   memorySize: 1024
   timeout: 30
   iam:
     role: arn:aws:iam::969784661290:role/LabRole
-  environment:
-    ACCOUNT_ID: 969784661290
-    REGION: us-east-1
 
 functions:
   # Función para registrar pedidos
@@ -56,15 +52,3 @@ resources:
           - AttributeName: pedido_id
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
-
-# Plugins requeridos
-plugins:
-  - serverless-python-requirements
-
-custom:
-  pythonRequirements:
-    dockerizePip: non-linux
-    slim: true
-    strip: false
