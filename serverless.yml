@@ -1,0 +1,70 @@
+org: rafaelram
+service: pedidos-service
+
+provider:
+  name: aws
+  runtime: python3.13
+  region: us-east-1
+  memorySize: 1024
+  timeout: 30
+  iam:
+    role: arn:aws:iam::969784661290:role/LabRole
+  environment:
+    ACCOUNT_ID: 969784661290
+    REGION: us-east-1
+
+functions:
+  # Función para registrar pedidos
+  registrarPedido:
+    handler: lambda_registraredido.lambda_handler
+    events:
+      - http:
+          path: pedidos/registrar
+          method: post
+          cors: true
+    environment:
+      SQS_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/969784661290/ColaPedidos
+
+  # Función para procesar pedidos
+  procesarPedido:
+    handler: lambda_procesarPedido.lambda_handler
+    events:
+      - http:
+          path: pedidos/procesar
+          method: post
+          cors: true
+    environment:
+      SQS_QUEUE_URL: https://sqs.us-east-1.amazonaws.com/969784661290/ColaPedidos
+      DYNAMODB_TABLE: t_pedidos_procesados
+
+# Recursos de AWS CloudFormation
+resources:
+  Resources:
+    # Tabla DynamoDB para pedidos procesados
+    PedidosProcesadosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_pedidos_procesados
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: pedido_id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: pedido_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+# Plugins requeridos
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+    slim: true
+    strip: false
